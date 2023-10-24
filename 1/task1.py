@@ -1,3 +1,6 @@
+import requests as requests
+
+
 class HttpMethodException(Exception):
     pass
 
@@ -18,20 +21,22 @@ class HTTP:
         self.headers: dict | None = {}
         self.body: str | None = None
 
-    def http_generator(self, method: str, url: str, http_version: float, headers: dict, body: any = None) -> str:
+    def http_generator(self, method: str, url: str, http_version: float, headers: dict,
+                       body: dict | None = None) -> str:
         if method not in self.AVAILABLE_METHODS:
             raise HttpMethodException(f"{method} not available methods")
         if http_version not in self.AVAILABLE_VERSIONS:
             raise HttpVersionException(f"{http_version} not available versions")
-        http_string = f"{method} {url} HTTP/{http_version}\n"
-        for key in headers:
-            http_string += f"{key}: {headers[key]}\n"
+        start_string = f"{method} {url} HTTP/{http_version}"
         if body and method in self.BODY_METHODS:
-            http_string += f"\n{body}"
-        return http_string
+            headers["Content-Type"] = "application/json"
+            headers["Content-Length"] = len(str(body))
+            body_string = f"\r\n{body}"
+        headers_string = '\r\n'.join(f'{key}: {value}' for key, value in headers.items())
+        return '\r\n'.join((start_string, headers_string, body_string if body else ""))
 
     def http_parser(self, http_string: str):
-        http_strings_iterator = iter(http_string.split("\n"))
+        http_strings_iterator = iter(http_string.split("\r\n"))
         self.method, self.url, http_version = next(http_strings_iterator).split()
         self.http_version = float(http_version.strip("HTTP/"))
         for headers_string in http_strings_iterator:
@@ -59,14 +64,16 @@ def test_http_generator():
 
 def test_http_parser():
     http = HTTP()
-    http_string = "POST https://www.youtube.com/watch?v=s9oQRKsROF8&ab_channel=capybaross HTTP/1.1\n" \
-                  "X-SID: asfdsafdsdfsaf\n" \
-                  '\n{"asdfsadf": "sadfsadfsda"}'
+    http_string = "POST https://www.youtube.com/watch?v=s9oQRKsROF8&ab_channel=capybaross HTTP/1.1\r\n" \
+                  "X-SID: asfdsafdsdfsaf\r\n" \
+                  "Content-Type: application/json\r\n" \
+                  "Content-Length: 27\r\n" \
+                  '\r\n{"asdfsadf": "sadfsadfsda"}'
     http.http_parser(http_string)
     assert http.method == "POST"
     assert http.url == "https://www.youtube.com/watch?v=s9oQRKsROF8&ab_channel=capybaross"
     assert http.http_version == 1.1
-    assert http.headers == {"X-SID": "asfdsafdsdfsaf"}
+    assert http.headers == {"X-SID": "asfdsafdsdfsaf", "Content-Type": "application/json", "Content-Length": "27"}
     assert http.body == '{"asdfsadf": "sadfsadfsda"}'
 
 
