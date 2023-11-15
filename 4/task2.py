@@ -3,10 +3,9 @@ from typing import Callable, Iterable
 
 def fake_map(func: Callable, iterable: Iterable, *iterables: tuple[Iterable, ...] | Iterable):
     if iterables:
-        sum_iterables = [iterable, *iterables]
-        for i in range(max(len(iterable) for iterable in sum_iterables)):
-            args = [iterable[i] if i < len(iterable) else None for iterable in sum_iterables]
-            yield func(*args)
+        all_iterables = [iterable, *iterables]
+        for i in range(min(len(iterable) for iterable in all_iterables)):
+            yield func(*[iterable_obj[i] for iterable_obj in all_iterables])
     else:
         for i in iterable:
             yield func(i)
@@ -23,3 +22,18 @@ fake_map_res2 = fake_map(lambda i, j: i + j, [1, 2, 3], [2, 3, 4])
 map_res2 = map(lambda i, j: i + j, [1, 2, 3], [2, 3, 4])
 assert fake_map_res2.__next__() == map_res2.__next__()
 assert fake_map_res2.__next__() == map_res2.__next__()
+
+# с ошибкой StopIteration из-за разных длин итерируемых объектов
+fake_map_res3 = fake_map(lambda i, j: i + j, [1, 2, 3], [2])
+map_res3 = map(lambda i, j: i + j, [1, 2, 3], [2])
+error_map = None
+error_fake_map = None
+try:
+    fake_map_res3.__next__()
+except Exception as e:
+    error_map = type(e)
+try:
+    map_res3.__next__()
+except Exception as e:
+    error_fake_map = type(e)
+assert error_map == error_fake_map
