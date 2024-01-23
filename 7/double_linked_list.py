@@ -21,6 +21,25 @@ class DoublyLinkedList:
             node.next = self.head
         self.head = node
 
+    # def add_node_to_n(self, data, n):
+    #     node = Node(data)
+    #     if not self.head:
+    #         self.tail = node
+    #         self.head = node
+    #         return
+    #     current = self.head
+    #     i = 0
+    #     while i < n:
+    #         i += 1
+    #         prev = current
+    #         try:
+    #             current = current.next
+    #         except:
+    #             print(f"Нельзя вставить элемент с порядковым номером {n}. Максимальное значение n для этого списка {i-1}")
+    #             return
+    #     prev.next = new_node
+    #     new_node.next = current
+
     def remove_node_from_begin(self):
         if self.head:
             if next_node := self.head.next:
@@ -60,5 +79,6 @@ if __name__ == "__main__":
     print(linked_list.get_node_from_begin())
     linked_list.remove_node_from_begin()
     linked_list.add_node_to_end(4)
-    linked_list.remove_node_from_end()
+    # linked_list.remove_node_from_end()
+    linked_list.add_node_to_n(500,2)
     print(linked_list.get_node_from_end())
